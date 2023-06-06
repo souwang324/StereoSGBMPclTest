@@ -7,7 +7,23 @@
  *
  */
 /*
-..\res\im2.png ..\res\im6.png --max-disparity=64 --blocksize=5 -o=..\output\teddy_sgbm.png --no-display --algorithm=sgbm --scale=1.0
+
+..\res\venus-imL.png ..\res\venus-imR.png --max-disparity=64 --blocksize=5 -o=..\output\\venusDepth.png --no-display --algorithm=sgbm --scale=1.0
+..\res\moebius1.png ..\res\moebius5.png --max-disparity=64 --blocksize=5 -o=..\output\\moebiusDepth.png --no-display --algorithm=sgbm --scale=1.0
+..\res\laundry1.png ..\res\laundry2.png --max-disparity=64 --blocksize=5 -o=..\output\\laundryDepth.png --no-display --algorithm=sgbm --scale=1.0
+..\res\im0.png ..\res\im1.png --max-disparity=64 --blocksize=5 -o=..\output\\imDepth.png --no-display --algorithm=sgbm --scale=1.0
+..\res\dwarves1.png ..\res\dwarves2.png --max-disparity=64 --blocksize=5 -o=..\output\\dwarvesDepth.png --no-display --algorithm=sgbm --scale=1.0
+..\res\drumsticks1.png ..\res\drumsticks2.png --max-disparity=64 --blocksize=5 -o=..\output\\drumsticksDepth.png --no-display --algorithm=sgbm --scale=1.0
+..\res\dolls1.png ..\res\dolls2.png --max-disparity=64 --blocksize=5 -o=..\output\\dollsDepth.png --no-display --algorithm=sgbm --scale=1.0
+..\res\computer1.png ..\res\computer2.png --max-disparity=64 --blocksize=5 -o=..\output\\computerDepth.png --no-display --algorithm=sgbm --scale=1.0
+..\res\books1.png ..\res\books2.png --max-disparity=64 --blocksize=5 -o=..\output\\booksDepth.png --no-display --algorithm=sgbm --scale=1.0
+..\res\art1.png ..\res\art5.png --max-disparity=64 --blocksize=5 -o=..\output\\artDepth.png --no-display --algorithm=sgbm --scale=1.0
+..\res\cone2.png ..\res\cone6.png --max-disparity=64 --blocksize=5 -o=..\output\coneDepth.png --no-display --algorithm=sgbm --scale=1.0
+..\res\reindeer1.png ..\res\reindeer5.png --max-disparity=64 --blocksize=5 -o=..\output\reindeerDepth.png --no-display --algorithm=sgbm --scale=1.0
+..\res\teddy-imL.png ..\res\teddy-imR.png --max-disparity=64 --blocksize=5 -o=..\output\teddyDepth.png --no-display --algorithm=sgbm --scale=1.0
+..\res\tsukuba-imL.png ..\res\tsukuba-imR.png --max-disparity=64 --blocksize=5 -o=..\output\tsukubaDepth.png --no-display --algorithm=sgbm --scale=1.0
+
+
 */
 
 #include "opencv2/calib3d/calib3d.hpp"
@@ -145,7 +161,7 @@ int main(int argc, char** argv)
     int color_mode = alg == STEREO_BM ? 0 : -1;
     Mat img1 = imread(img1_filename, color_mode);
     Mat img2 = imread(img2_filename, color_mode);
-
+	Mat image_Texture = cv::imread(img1_filename, color_mode);
     if (img1.empty())
     {
         printf("Command-line parameter error: could not load the first input image file\n");
@@ -307,9 +323,7 @@ int main(int argc, char** argv)
         printf("\n");
     }
 
-	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
-	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
-
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 	// Fill in the cloud data
 	cloud->width = disp8.cols;
 	cloud->height = disp8.rows;
@@ -322,21 +336,15 @@ int main(int argc, char** argv)
 			cloud->points[idx].x = int(i + 1);
 			cloud->points[idx].y = int(j + 1);
 			cloud->points[idx].z = int(255 - disp8.at<uchar>(i, j));
+			cv::Vec3b pixel = image_Texture.at<cv::Vec3b>(i, j);
+			cloud->points[idx].b = pixel[0];
+			cloud->points[idx].g = pixel[1];
+			cloud->points[idx].r = pixel[2];
 			idx++;
 		}
 
-	pcl::RadiusOutlierRemoval<pcl::PointXYZ> outrem;
-	// build the filter
-	outrem.setInputCloud(cloud);
-	outrem.setRadiusSearch(5);
-	outrem.setMinNeighborsInRadius(5);
-	outrem.setKeepOrganized(true);
-	// apply filter
-	outrem.filter(*cloud_filtered);
-	
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer("3D Viewer"));
-	pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZ> fildColor(cloud_filtered, "z");
-	viewer->addPointCloud<pcl::PointXYZ>(cloud_filtered, fildColor, "sample cloud");
+	viewer->addPointCloud<pcl::PointXYZRGB>(cloud, "sample cloud");
 	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "sample cloud");
 
 	//use the following functions to get access to the underlying more advanced/powerful
